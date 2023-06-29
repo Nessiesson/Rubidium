@@ -1,5 +1,12 @@
 package me.jellysquid.mods.sodium.mixin.features.item;
 
+import me.jellysquid.mods.sodium.client.model.quad.ModelQuadView;
+import me.jellysquid.mods.sodium.client.render.texture.SpriteUtil;
+import me.jellysquid.mods.sodium.client.render.vertex.VertexBufferWriter;
+import me.jellysquid.mods.sodium.client.render.vertex.formats.ModelVertex;
+import me.jellysquid.mods.sodium.client.util.color.ColorARGB;
+import me.jellysquid.mods.sodium.client.world.biome.ItemColorsExtended;
+import me.jellysquid.mods.sodium.common.util.DirectionUtil;
 import net.minecraft.client.color.item.ItemColorProvider;
 import net.minecraft.client.color.item.ItemColors;
 import net.minecraft.client.render.VertexConsumer;
@@ -10,21 +17,10 @@ import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.random.Xoroshiro128PlusPlusRandom;
-
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
 import org.spongepowered.asm.mixin.Shadow;
-
-import me.jellysquid.mods.sodium.client.model.quad.ModelQuadView;
-import me.jellysquid.mods.sodium.client.model.vertex.VanillaVertexTypes;
-import me.jellysquid.mods.sodium.client.model.vertex.VertexDrain;
-import me.jellysquid.mods.sodium.client.model.vertex.formats.quad.QuadVertexSink;
-import me.jellysquid.mods.sodium.client.render.texture.SpriteUtil;
-import me.jellysquid.mods.sodium.client.util.ModelQuadUtil;
-import me.jellysquid.mods.sodium.client.util.color.ColorARGB;
-import me.jellysquid.mods.sodium.client.world.biome.ItemColorsExtended;
-import me.jellysquid.mods.sodium.common.util.DirectionUtil;
 
 import java.util.List;
 
@@ -41,15 +37,24 @@ public class MixinItemRenderer {
      * @author JellySquid
      */
     @Overwrite
-    public void renderBakedItemModel(BakedModel model, ItemStack stack, int light, int overlay, MatrixStack matrices, VertexConsumer vertices) {
-    	Xoroshiro128PlusPlusRandom random = this.random;
+    public void renderBakedItemModel(BakedModel model, ItemStack itemStack, int light, int overlay, MatrixStack matricStack, VertexConsumer vertexConsumer) {
+        var writer = VertexBufferWriter.of(vertexConsumer);
+
+        Xoroshiro128PlusPlusRandom random = this.random;
+        MatrixStack.Entry matrices = matricStack.peek();
+
+        ItemColorProvider colorProvider = null;
+
+        if (!itemStack.isEmpty()) {
+            colorProvider = ((ItemColorsExtended) this.colors).getColorProvider(itemStack);
+        }
 
         for (Direction direction : DirectionUtil.ALL_DIRECTIONS) {
-        	random.setSeed(42L);
+            random.setSeed(42L);
             List<BakedQuad> quads = model.getQuads(null, direction, random);
 
             if (!quads.isEmpty()) {
-                this.renderBakedItemQuads(matrices, vertices, quads, stack, light, overlay);
+                this.sodium$renderBakedItemQuads(matrices, writer, quads, itemStack, colorProvider, light, overlay);
             }
         }
 
@@ -57,7 +62,7 @@ public class MixinItemRenderer {
         List<BakedQuad> quads = model.getQuads(null, null, random);
 
         if (!quads.isEmpty()) {
-            this.renderBakedItemQuads(matrices, vertices, quads, stack, light, overlay);
+            this.sodium$renderBakedItemQuads(matrices, writer, quads, itemStack, colorProvider, light, overlay);
         }
     }
 
@@ -65,60 +70,37 @@ public class MixinItemRenderer {
      * @reason Use vertex building intrinsics
      * @author JellySquid
      */
-    @Overwrite
-    public void renderBakedItemQuads(MatrixStack matrices, VertexConsumer vertexConsumer, List<BakedQuad> quads, ItemStack stack, int light, int overlay) {
-        MatrixStack.Entry entry = matrices.peek();
+    @SuppressWarnings("ForLoopReplaceableByForEach")
+    private void sodium$renderBakedItemQuads(MatrixStack.Entry matrices, VertexBufferWriter writer, List<BakedQuad> quads, ItemStack itemStack, ItemColorProvider colorProvider, int light, int overlay) {
+        for (int j = 0; j < quads.size(); j++) {
+            BakedQuad bakedQuad = quads.get(j);
 
-        ItemColorProvider colorProvider = null;
-
-        QuadVertexSink drain = VertexDrain.of(vertexConsumer)
-                .createSink(VanillaVertexTypes.QUADS);
-        drain.ensureCapacity(quads.size() * 4);
-
-        for (BakedQuad bakedQuad : quads) {
             int color = 0xFFFFFFFF;
 
-            if (!stack.isEmpty() && bakedQuad.hasColor()) {
-                if (colorProvider == null) {
-                    colorProvider = ((ItemColorsExtended) this.colors).getColorProvider(stack);
-                }
-
-                try {
-                if (colorProvider == null) {
-                    color = ColorARGB.toABGR(this.colors.getColor(stack, bakedQuad.getColorIndex()), 255);
-                } else {
-                    color = ColorARGB.toABGR((colorProvider.getColor(stack, bakedQuad.getColorIndex())), 255);
-                }
-                }catch(Exception e) {
-                }
+            if (colorProvider != null && bakedQuad.hasColor()) {
+                color = ColorARGB.toABGR((colorProvider.getColor(itemStack, bakedQuad.getColorIndex())), 255);
             }
 
             ModelQuadView quad = ((ModelQuadView) bakedQuad);
 
-            for (int i = 0; i < 4; i++) {
-            	int fColor = multARGBInts(quad.getColor(i), color);
-                drain.writeQuad(entry, quad.getX(i), quad.getY(i), quad.getZ(i), fColor, quad.getTexU(i), quad.getTexV(i),
-                        light, overlay, ModelQuadUtil.getFacingNormal(bakedQuad.getFace()));
-            }
+            ModelVertex.writeQuadVertices(writer, matrices, quad, light, overlay, color);
 
             SpriteUtil.markSpriteActive(quad.getSprite());
         }
-
-        drain.flush();
     }
-    
+
     private int multARGBInts(int colorA, int colorB) {
-    	// Most common case: Either quad coloring or tint-based coloring, but not both
+        // Most common case: Either quad coloring or tint-based coloring, but not both
         if (colorA == -1) {
             return colorB;
         } else if (colorB == -1) {
             return colorA;
         }
         // General case (rare): Both colorings, actually perform the multiplication
-        int a = (int)((ColorARGB.unpackAlpha(colorA)/255.0f) * (ColorARGB.unpackAlpha(colorB)/255.0f) * 255.0f);
-        int b = (int)((ColorARGB.unpackBlue(colorA)/255.0f) * (ColorARGB.unpackBlue(colorB)/255.0f) * 255.0f);
-        int g = (int)((ColorARGB.unpackGreen(colorA)/255.0f) * (ColorARGB.unpackGreen(colorB)/255.0f) * 255.0f);
-        int r = (int)((ColorARGB.unpackRed(colorA)/255.0f) * (ColorARGB.unpackRed(colorB)/255.0f) * 255.0f);
+        int a = (int) ((ColorARGB.unpackAlpha(colorA) / 255.0f) * (ColorARGB.unpackAlpha(colorB) / 255.0f) * 255.0f);
+        int b = (int) ((ColorARGB.unpackBlue(colorA) / 255.0f) * (ColorARGB.unpackBlue(colorB) / 255.0f) * 255.0f);
+        int g = (int) ((ColorARGB.unpackGreen(colorA) / 255.0f) * (ColorARGB.unpackGreen(colorB) / 255.0f) * 255.0f);
+        int r = (int) ((ColorARGB.unpackRed(colorA) / 255.0f) * (ColorARGB.unpackRed(colorB) / 255.0f) * 255.0f);
         return ColorARGB.pack(r, g, b, a);
     }
 }

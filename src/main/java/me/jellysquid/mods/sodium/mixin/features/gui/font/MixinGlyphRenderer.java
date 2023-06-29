@@ -1,12 +1,14 @@
 package me.jellysquid.mods.sodium.mixin.features.gui.font;
 
-import me.jellysquid.mods.sodium.client.model.vertex.VanillaVertexTypes;
-import me.jellysquid.mods.sodium.client.model.vertex.VertexDrain;
-import me.jellysquid.mods.sodium.client.model.vertex.formats.glyph.GlyphVertexSink;
+import me.jellysquid.mods.sodium.client.render.vertex.VertexBufferWriter;
+import me.jellysquid.mods.sodium.client.render.vertex.formats.GlyphVertex;
 import me.jellysquid.mods.sodium.client.util.color.ColorABGR;
+import me.jellysquid.mods.sodium.client.util.math.Matrix4fExtended;
+import me.jellysquid.mods.sodium.client.util.math.MatrixUtil;
 import net.minecraft.client.font.GlyphRenderer;
 import net.minecraft.client.render.VertexConsumer;
 import net.minecraft.util.math.Matrix4f;
+import org.lwjgl.system.MemoryStack;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
@@ -63,13 +65,35 @@ public class MixinGlyphRenderer {
 
         int color = ColorABGR.pack(red, green, blue, alpha);
 
-        GlyphVertexSink drain = VertexDrain.of(vertexConsumer)
-                .createSink(VanillaVertexTypes.GLYPHS);
-        drain.ensureCapacity(4);
-        drain.writeGlyph(matrix, x1 + w1, h1, 0.0F, color, this.minU, this.minV, light);
-        drain.writeGlyph(matrix, x1 + w2, h2, 0.0F, color, this.minU, this.maxV, light);
-        drain.writeGlyph(matrix, x2 + w2, h2, 0.0F, color, this.maxU, this.maxV, light);
-        drain.writeGlyph(matrix, x2 + w1, h1, 0.0F, color, this.maxU, this.minV, light);
-        drain.flush();
+        var writer = VertexBufferWriter.of(vertexConsumer);
+
+        try (MemoryStack stack = VertexBufferWriter.STACK.push()) {
+            long buffer = writer.buffer(stack, 4, GlyphVertex.STRIDE, GlyphVertex.FORMAT);
+            long ptr = buffer;
+
+            write(ptr, matrix, x1 + w1, h1, 0.0F, color, this.minU, this.minV, light);
+            ptr += GlyphVertex.STRIDE;
+
+            write(ptr, matrix, x1 + w2, h2, 0.0F, color, this.minU, this.maxV, light);
+            ptr += GlyphVertex.STRIDE;
+
+            write(ptr, matrix, x2 + w2, h2, 0.0F, color, this.maxU, this.maxV, light);
+            ptr += GlyphVertex.STRIDE;
+
+            write(ptr, matrix, x2 + w1, h1, 0.0F, color, this.maxU, this.minV, light);
+            ptr += GlyphVertex.STRIDE;
+
+            writer.push(buffer, 4, GlyphVertex.STRIDE, GlyphVertex.FORMAT);
+        }
+    }
+
+    private static void write(long buffer,
+                              Matrix4f matrix, float x, float y, float z, int color, float u, float v, int light) {
+        Matrix4fExtended ext = MatrixUtil.getExtendedMatrix(matrix);
+        float x2 = ext.transformVecX(x, y, z);
+        float y2 = ext.transformVecY(x, y, z);
+        float z2 = ext.transformVecZ(x, y, z);
+
+        GlyphVertex.write(buffer, x2, y2, z2, color, u, v, light);
     }
 }

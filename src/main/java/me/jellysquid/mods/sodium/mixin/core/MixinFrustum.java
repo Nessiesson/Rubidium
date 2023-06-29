@@ -4,8 +4,8 @@ import me.jellysquid.mods.sodium.client.util.frustum.FrustumAdapter;
 import me.jellysquid.mods.sodium.client.util.frustum.JomlFrustum;
 import me.jellysquid.mods.sodium.client.util.math.JomlHelper;
 import net.minecraft.client.render.Frustum;
-import repack.joml.Matrix4f;
-import repack.joml.Vector3f;
+import org.joml.Matrix4f;
+import org.joml.Vector3f;
 
 import org.apache.commons.lang3.Validate;
 import org.spongepowered.asm.mixin.Mixin;

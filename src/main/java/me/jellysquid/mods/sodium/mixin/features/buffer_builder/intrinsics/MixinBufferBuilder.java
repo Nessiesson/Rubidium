@@ -1,9 +1,6 @@
 package me.jellysquid.mods.sodium.mixin.features.buffer_builder.intrinsics;
 
 import me.jellysquid.mods.sodium.client.model.quad.ModelQuadView;
-import me.jellysquid.mods.sodium.client.model.vertex.VanillaVertexTypes;
-import me.jellysquid.mods.sodium.client.model.vertex.VertexDrain;
-import me.jellysquid.mods.sodium.client.model.vertex.formats.quad.QuadVertexSink;
 import me.jellysquid.mods.sodium.client.util.color.ColorABGR;
 import me.jellysquid.mods.sodium.client.util.color.ColorU8;
 import me.jellysquid.mods.sodium.client.util.math.MatrixUtil;
@@ -22,7 +19,7 @@ public abstract class MixinBufferBuilder extends FixedColorVertexConsumer {
     @Shadow
     private boolean textured;
 
-    @Override
+/*    @Override
     public void quad(MatrixStack.Entry matrices, BakedQuad quad, float[] brightnessTable, float r, float g, float b, int[] light, int overlay, boolean colorize) {
         if (!this.textured) {
             super.quad(matrices, quad, brightnessTable, r, g, b, light, overlay, colorize);
@@ -84,5 +81,5 @@ public abstract class MixinBufferBuilder extends FixedColorVertexConsumer {
         }
 
         drain.flush();
-    }
+    }*/
 }

@@ -12,7 +12,7 @@ import me.jellysquid.mods.sodium.client.model.quad.properties.ModelQuadFacing;
 import me.jellysquid.mods.sodium.client.model.quad.properties.ModelQuadWinding;
 import me.jellysquid.mods.sodium.client.render.chunk.compile.ChunkBuildBuffers;
 import me.jellysquid.mods.sodium.client.render.chunk.compile.buffers.ChunkModelBuilder;
-import me.jellysquid.mods.sodium.client.render.chunk.format.ModelVertexSink;
+import me.jellysquid.mods.sodium.client.render.vertex.type.ChunkVertexBufferBuilder;
 import me.jellysquid.mods.sodium.client.util.color.ColorARGB;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.RenderLayer;
@@ -89,12 +89,10 @@ public class ImmersiveConnectionRenderer implements SynchronousResourceReloader 
         int colorRGB = connection.type.getColour(connection);
         int colorBGR = ColorARGB.toABGR(colorRGB);
         double radius = connection.type.getRenderDiameter() / 2;
-        var vertices = out.getVertexSink();
         List<RenderedSegment> segments = SEGMENT_CACHE.getUnchecked(new SegmentsKey(
                 radius, colorBGR, connection.getCatenaryData(),
                 toRender.firstPointToRender(), toRender.lastPointToRender()
         ));
-        vertices.ensureCapacity(2 * 4 * segments.size());
         int lastLight = 0;
         for (int startPoint = 0; startPoint < segments.size(); ++startPoint) {
             var renderedSegment = segments.get(startPoint);
@@ -105,7 +103,6 @@ public class ImmersiveConnectionRenderer implements SynchronousResourceReloader 
             renderedSegment.render(lastLight, nextLight, offX, offY, offZ, out);
             lastLight = nextLight;
         }
-        vertices.flush();
     }
 
     private static List<RenderedSegment> renderSegmentForCache(SegmentsKey key) {
@@ -169,9 +166,10 @@ public class ImmersiveConnectionRenderer implements SynchronousResourceReloader 
             boolean lightForStart
     ) {
         void write(
-                ModelVertexSink vertexSink, int offX, int offY, int offZ, int lightStart, int lightEnd, int chunkId
+                ChunkVertexBufferBuilder vertices, int offX, int offY, int offZ, int lightStart, int lightEnd, int chunkId
         ) {
-            vertexSink.writeVertex(
+            vertices.writeVertex(
+                    new Vec3i(posX, posY, posZ),
                     offX + posX, offY + posY, offZ + posZ,
                     color, texU, texV, lightForStart ? lightStart : lightEnd, chunkId
             );
@@ -182,13 +180,13 @@ public class ImmersiveConnectionRenderer implements SynchronousResourceReloader 
         void write(
                 ChunkModelBuilder out, int offX, int offY, int offZ, int lightStart, int lightEnd
         ) {
-            var vertexSink = out.getVertexSink();
+            var vertexSink = out.getVertexBuffer();
             int quadStart = vertexSink.getVertexCount();
             v0.write(vertexSink, offX, offY, offZ, lightStart, lightEnd, out.getChunkId());
             v1.write(vertexSink, offX, offY, offZ, lightStart, lightEnd, out.getChunkId());
             v2.write(vertexSink, offX, offY, offZ, lightStart, lightEnd, out.getChunkId());
             v3.write(vertexSink, offX, offY, offZ, lightStart, lightEnd, out.getChunkId());
-            var indexBuffer = out.getIndexBufferBuilder(ModelQuadFacing.UNASSIGNED);
+            var indexBuffer = out.getIndexBuffer(ModelQuadFacing.UNASSIGNED);
             indexBuffer.add(quadStart, ModelQuadWinding.CLOCKWISE);
             indexBuffer.add(quadStart, ModelQuadWinding.COUNTERCLOCKWISE);
         }

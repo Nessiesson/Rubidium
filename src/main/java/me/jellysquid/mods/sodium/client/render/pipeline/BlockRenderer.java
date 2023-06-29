@@ -12,8 +12,8 @@ import me.jellysquid.mods.sodium.client.model.quad.properties.ModelQuadOrientati
 import me.jellysquid.mods.sodium.client.model.quad.properties.ModelQuadWinding;
 import me.jellysquid.mods.sodium.client.model.quad.blender.ColorSampler;
 import me.jellysquid.mods.sodium.client.render.chunk.compile.buffers.ChunkModelBuilder;
-import me.jellysquid.mods.sodium.client.render.chunk.format.ModelVertexSink;
 import me.jellysquid.mods.sodium.client.render.occlusion.BlockOcclusionCache;
+import me.jellysquid.mods.sodium.client.render.vertex.type.ChunkVertexBufferBuilder;
 import me.jellysquid.mods.sodium.client.util.color.ColorABGR;
 import me.jellysquid.mods.sodium.client.world.biome.BlockColorsExtended;
 import me.jellysquid.mods.sodium.common.util.DirectionUtil;
@@ -96,10 +96,8 @@ public class BlockRenderer {
     	ModelQuadFacing facing = cullFace == null ? ModelQuadFacing.UNASSIGNED : ModelQuadFacing.fromDirection(cullFace);
         ColorSampler<BlockState> colorizer = null;
 
-        ModelVertexSink vertices = buffers.getVertexSink();
-        vertices.ensureCapacity(quads.size() * 4);
-
-        IndexBufferBuilder indices = buffers.getIndexBufferBuilder(facing);
+        ChunkVertexBufferBuilder vertices = buffers.getVertexBuffer();
+        IndexBufferBuilder indices = buffers.getIndexBuffer(facing);
 
         // This is a very hot allocation, iterate over it manually
         // noinspection ForLoopReplaceableByForEach
@@ -115,11 +113,9 @@ public class BlockRenderer {
 
             this.renderQuad(world, state, pos, origin, vertices, indices, offset, colorizer, quad, light, buffers);
         }
-
-        vertices.flush();
     }
 
-    private void renderQuad(BlockRenderView world, BlockState state, BlockPos pos, BlockPos origin, ModelVertexSink vertices, IndexBufferBuilder indices, Vec3d blockOffset,
+    private void renderQuad(BlockRenderView world, BlockState state, BlockPos pos, BlockPos origin, ChunkVertexBufferBuilder vertices, IndexBufferBuilder indices, Vec3d blockOffset,
                             ColorSampler<BlockState> colorSampler, BakedQuad bakedQuad, QuadLightData light, ChunkModelBuilder model) {
         ModelQuadView src = (ModelQuadView) bakedQuad;
         ModelQuadOrientation orientation = ModelQuadOrientation.orientByBrightness(light.br);

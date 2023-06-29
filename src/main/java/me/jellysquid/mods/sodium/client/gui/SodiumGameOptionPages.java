@@ -13,11 +13,7 @@ import me.jellysquid.mods.sodium.client.gui.options.storage.MinecraftOptionsStor
 import me.jellysquid.mods.sodium.client.gui.options.storage.SodiumOptionsStorage;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gl.Framebuffer;
-import net.minecraft.client.option.AoMode;
-import net.minecraft.client.option.AttackIndicator;
-import net.minecraft.client.option.CloudRenderMode;
-import net.minecraft.client.option.GraphicsMode;
-import net.minecraft.client.option.ParticlesMode;
+import net.minecraft.client.option.*;
 import net.minecraft.client.util.Window;
 import net.minecraft.text.Text;
 
@@ -288,14 +284,6 @@ public class SodiumGameOptionPages {
                         .setControl(TickBoxControl::new)
                         .setImpact(OptionImpact.MEDIUM)
                         .setBinding((opts, value) -> opts.performance.useEntityCulling = value, opts -> opts.performance.useEntityCulling)
-                        .build()
-                )
-                .add(OptionImpl.createBuilder(boolean.class, sodiumOpts)
-                        .setName(Text.translatable("sodium.options.use_particle_culling.name"))
-                        .setTooltip(Text.translatable("sodium.options.use_particle_culling.tooltip"))
-                        .setControl(TickBoxControl::new)
-                        .setImpact(OptionImpact.MEDIUM)
-                        .setBinding((opts, value) -> opts.performance.useParticleCulling = value, opts -> opts.performance.useParticleCulling)
                         .build()
                 )
                 .add(OptionImpl.createBuilder(boolean.class, sodiumOpts)

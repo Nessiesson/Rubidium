@@ -13,10 +13,10 @@ import net.minecraft.util.registry.Registry;
 import java.util.Set;
 
 public class DefaultBlockColorSettings {
-	
+
 	private static final TagKey<Block> MODDED_BLENDED_BLOCKS = TagKey.of(Registry.BLOCK_KEY, new Identifier("c", "blendable_blocks"));
     private static final TagKey<Fluid> MODDED_BLENDED_FLUIDS = TagKey.of(Registry.FLUID_KEY, new Identifier("c", "blendable_fluids"));
-	
+
 	private static final Set<Block> BLENDED_BLOCKS = new ReferenceOpenHashSet<>(Sets.newHashSet(
             Blocks.FERN, Blocks.LARGE_FERN, Blocks.POTTED_FERN, Blocks.GRASS, Blocks.TALL_GRASS,
             Blocks.GRASS_BLOCK, Blocks.OAK_LEAVES, Blocks.JUNGLE_LEAVES, Blocks.ACACIA_LEAVES, Blocks.DARK_OAK_LEAVES,

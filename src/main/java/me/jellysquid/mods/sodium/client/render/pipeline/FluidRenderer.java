@@ -17,7 +17,6 @@ import me.jellysquid.mods.sodium.client.model.quad.properties.ModelQuadFacing;
 import me.jellysquid.mods.sodium.client.model.quad.properties.ModelQuadFlags;
 import me.jellysquid.mods.sodium.client.model.quad.properties.ModelQuadWinding;
 import me.jellysquid.mods.sodium.client.render.chunk.compile.buffers.ChunkModelBuilder;
-import me.jellysquid.mods.sodium.client.render.chunk.format.ModelVertexSink;
 import me.jellysquid.mods.sodium.client.util.Norm3b;
 import me.jellysquid.mods.sodium.client.util.color.ColorABGR;
 import me.jellysquid.mods.sodium.common.util.DirectionUtil;
@@ -58,11 +57,7 @@ public class FluidRenderer {
     private final int[] quadColors = new int[4];
 
     public FluidRenderer(LightPipelineProvider lighters, ColorBlender colorBlender) {
-        int normal = Norm3b.pack(0.0f, 1.0f, 0.0f);
-
-        for (int i = 0; i < 4; i++) {
-            this.quad.setNormal(i, normal);
-        }
+        this.quad.setNormal(Norm3b.pack(0.0f, 1.0f, 0.0f));
 
         this.lighters = lighters;
         this.colorBlender = colorBlender;
@@ -76,7 +71,7 @@ public class FluidRenderer {
         if (blockState.isOpaque()) {
             return world.getFluidState(adjPos).getFluid().matchesType(fluid) || blockState.isSideSolid(world,pos,dir, SideShapeType.FULL);
             // fluidlogged or next to water, occlude sides that are solid or the same liquid
-            }
+        }
         return world.getFluidState(adjPos).getFluid().matchesType(fluid);
     }
 
@@ -223,11 +218,11 @@ public class FluidRenderer {
 
             int vertexStart = this.writeVertices(buffers, offset, quad);
 
-            buffers.getIndexBufferBuilder(facing)
+            buffers.getIndexBuffer(facing)
                     .add(vertexStart, ModelQuadWinding.CLOCKWISE);
 
             if (fluidState.method_15756(world, this.scratchPos.set(posX, posY + 1, posZ))) {
-                buffers.getIndexBufferBuilder(ModelQuadFacing.DOWN)
+                buffers.getIndexBuffer(ModelQuadFacing.DOWN)
                         .add(vertexStart, ModelQuadWinding.COUNTERCLOCKWISE);
             }
 
@@ -252,7 +247,7 @@ public class FluidRenderer {
 
             int vertexStart = this.writeVertices(buffers, offset, quad);
 
-            buffers.getIndexBufferBuilder(ModelQuadFacing.DOWN)
+            buffers.getIndexBuffer(ModelQuadFacing.DOWN)
                     .add(vertexStart, ModelQuadWinding.CLOCKWISE);
 
             rendered = true;
@@ -364,11 +359,11 @@ public class FluidRenderer {
 
                 int vertexStart = this.writeVertices(buffers, offset, quad);
 
-                buffers.getIndexBufferBuilder(facing)
+                buffers.getIndexBuffer(facing)
                         .add(vertexStart, ModelQuadWinding.CLOCKWISE);
 
                 if (!isOverlay) {
-                    buffers.getIndexBufferBuilder(facing.getOpposite())
+                    buffers.getIndexBuffer(facing.getOpposite())
                             .add(vertexStart, ModelQuadWinding.COUNTERCLOCKWISE);
                 }
 
@@ -399,10 +394,8 @@ public class FluidRenderer {
     }
 
     private int writeVertices(ChunkModelBuilder builder, BlockPos offset, ModelQuadView quad) {
-        ModelVertexSink vertices = builder.getVertexSink();
-        vertices.ensureCapacity(4);
-
-        int vertexStart = vertices.getVertexCount();
+        var vertices = builder.getVertexBuffer();
+        var vertexStart = vertices.getVertexCount();
 
         for (int i = 0; i < 4; i++) {
             float x = quad.getX(i);
@@ -418,8 +411,6 @@ public class FluidRenderer {
 
             vertices.writeVertex(offset, x, y, z, color, u, v, light, builder.getChunkId());
         }
-
-        vertices.flush();
 
         Sprite sprite = quad.getSprite();
 

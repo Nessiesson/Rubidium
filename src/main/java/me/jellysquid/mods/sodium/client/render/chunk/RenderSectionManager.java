@@ -15,7 +15,6 @@ import me.jellysquid.mods.sodium.client.render.SodiumWorldRenderer;
 import me.jellysquid.mods.sodium.client.render.chunk.compile.ChunkBuildResult;
 import me.jellysquid.mods.sodium.client.render.chunk.compile.ChunkBuilder;
 import me.jellysquid.mods.sodium.client.render.chunk.data.ChunkRenderData;
-import me.jellysquid.mods.sodium.client.render.chunk.format.ChunkModelVertexFormats;
 import me.jellysquid.mods.sodium.client.render.chunk.graph.ChunkGraphInfo;
 import me.jellysquid.mods.sodium.client.render.chunk.graph.ChunkGraphIterationQueue;
 import me.jellysquid.mods.sodium.client.render.chunk.passes.BlockRenderPass;
@@ -25,6 +24,7 @@ import me.jellysquid.mods.sodium.client.render.chunk.region.RenderRegionManager;
 import me.jellysquid.mods.sodium.client.render.chunk.tasks.ChunkRenderBuildTask;
 import me.jellysquid.mods.sodium.client.render.chunk.tasks.ChunkRenderEmptyBuildTask;
 import me.jellysquid.mods.sodium.client.render.chunk.tasks.ChunkRenderRebuildTask;
+import me.jellysquid.mods.sodium.client.render.vertex.type.ChunkModelVertexFormats;
 import me.jellysquid.mods.sodium.client.util.MathUtil;
 import me.jellysquid.mods.sodium.client.util.frustum.Frustum;
 import me.jellysquid.mods.sodium.client.world.WorldSlice;
@@ -103,12 +103,12 @@ public class RenderSectionManager {
     private final ChunkTracker tracker;
 
     public RenderSectionManager(SodiumWorldRenderer worldRenderer, BlockRenderPassManager renderPassManager, ClientWorld world, int renderDistance, CommandList commandList) {
-        this.chunkRenderer = new RegionChunkRenderer(RenderDevice.INSTANCE, ChunkModelVertexFormats.DEFAULT);
+        this.chunkRenderer = new RegionChunkRenderer(RenderDevice.INSTANCE, ChunkModelVertexFormats.COMPACT);
 
         this.worldRenderer = worldRenderer;
         this.world = world;
 
-        this.builder = new ChunkBuilder(ChunkModelVertexFormats.DEFAULT);
+        this.builder = new ChunkBuilder(ChunkModelVertexFormats.COMPACT);
         this.builder.init(world, renderPassManager);
 
         this.needsUpdate = true;

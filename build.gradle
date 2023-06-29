@@ -1,15 +1,15 @@
 plugins {
-	id 'dev.architectury.loom' version '0.11.0-SNAPSHOT'
-	id 'maven-publish'
+    id "dev.architectury.loom" version "1.2-SNAPSHOT"
+    id "maven-publish"
 }
 
 loom {
     silentMojangMappingsLicense()
-	forge {
-		mixinConfigs = [
-			"rubidium.mixins.json"
-		]
-	}
+    forge {
+        mixinConfigs = [
+                "rubidium.mixins.json"
+        ]
+    }
 }
 
 sourceCompatibility = JavaVersion.VERSION_17
@@ -19,62 +19,53 @@ archivesBaseName = project.archives_base_name
 version = project.mod_version
 group = project.maven_group
 
-configurations {
-    modIncludeImplementation
-
-    include.extendsFrom modIncludeImplementation
-    modImplementation.extendsFrom modIncludeImplementation
-}
-
 repositories {
-    maven{
+    maven {
         // curseforge
         url "https://www.cursemaven.com"
-		content {
-			includeGroup "curse.maven"
-		}
+        content {
+            includeGroup "curse.maven"
+        }
     }
 }
 
 dependencies {
-	minecraft "com.mojang:minecraft:${project.minecraft_version}"
-	mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
-	forge "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
+    minecraft "com.mojang:minecraft:${project.minecraft_version}"
+    mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
+    forge "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
 
     modCompileOnly "curse.maven:flywheel-486392:${flywheel_fileid}"
     modCompileOnly "curse.maven:immersive-engineering-231951:${ie_fileid}"
     modCompileOnly "curse.maven:oculus-581495:${oculus_fileid}"
+
+    include(forgeRuntimeLibrary(implementation("org.joml:joml:1.10.5")))
 }
 
 processResources {
-	inputs.property "version", project.version
+    inputs.property "version", project.version
 
-	filesMatching("META-INF/mods.toml") {
+    filesMatching("META-INF/mods.toml") {
         expand "version": project.version
     }
 }
 
 tasks.withType(JavaCompile).configureEach {
-	it.options.release = 17
-}
-
-java {
-	withSourcesJar()
+    it.options.release = 17
 }
 
 jar {
-	from("LICENSE") {
-		rename { "${it}_${project.archivesBaseName}"}
-	}
+    from("LICENSE") {
+        rename { "${it}_${project.archivesBaseName}" }
+    }
 }
 
 publishing {
-	publications {
-		mavenJava(MavenPublication) {
-			from components.java
-		}
-	}
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+        }
+    }
 
-	repositories {
-	}
+    repositories {
+    }
 }

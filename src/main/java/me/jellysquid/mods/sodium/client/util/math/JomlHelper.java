@@ -2,7 +2,7 @@ package me.jellysquid.mods.sodium.client.util.math;
 
 import org.lwjgl.system.MemoryStack;
 
-import repack.joml.Matrix4f;
+import org.joml.Matrix4f;
 
 import java.nio.FloatBuffer;
 
