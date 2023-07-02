@@ -10,20 +10,22 @@ import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.random.Random;
 import net.minecraftforge.client.model.data.ModelData;
 import net.minecraftforge.client.model.data.MultipartModelData;
-
 import org.apache.commons.lang3.tuple.Pair;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
 import org.spongepowered.asm.mixin.Shadow;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.locks.StampedLock;
 import java.util.function.Predicate;
 
 @Mixin(MultipartBakedModel.class)
 public class MixinMultipartBakedModel {
-	private final Map<BlockState, BakedModel[]> stateCacheFast = new Reference2ReferenceOpenHashMap<>();
+    private final Map<BlockState, BakedModel[]> stateCacheFast = new Reference2ReferenceOpenHashMap<>();
     private final StampedLock lock = new StampedLock();
 
     @Shadow
@@ -75,7 +77,7 @@ public class MixinMultipartBakedModel {
             random.setSeed(seed);
 
             if (layer == null || model.getRenderTypes(state, random, modelData).contains(layer)) // FORGE: Only put quad data if the model is using the render type passed
-            	quads.addAll(model.getQuads(state, face, random, MultipartModelData.resolve(modelData, model), layer));
+                quads.addAll(model.getQuads(state, face, random, MultipartModelData.resolve(modelData, model), layer));
         }
 
         return quads;

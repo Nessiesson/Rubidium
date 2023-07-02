@@ -1,78 +1,83 @@
 package me.jellysquid.mods.sodium.client.render.vertex.type;
 
 import me.jellysquid.mods.sodium.client.util.NativeBuffer;
-import net.minecraft.util.math.Vec3i;
 import org.lwjgl.system.MemoryUtil;
 
 import java.nio.ByteBuffer;
 
 public class ChunkVertexBufferBuilder {
-	private final ChunkVertexEncoder encoder;
-	private final int stride;
+    private final ChunkVertexEncoder encoder;
+    private final int stride;
 
-	private final int initialCapacity;
+    private final int initialCapacity;
 
-	private ByteBuffer buffer;
-	private int count;
-	private int capacity;
+    private ByteBuffer buffer;
+    private int count;
+    private int capacity;
+    private int chunkId;
 
-	public ChunkVertexBufferBuilder(ChunkVertexType vertexType, int initialCapacity) {
-		this.encoder = vertexType.getEncoder();
-		this.stride = vertexType.getVertexFormat().getStride();
+    public ChunkVertexBufferBuilder(ChunkVertexType vertexType, int initialCapacity) {
+        this.encoder = vertexType.getEncoder();
+        this.stride = vertexType.getVertexFormat().getStride();
 
-		this.buffer = null;
+        this.buffer = null;
 
-		this.capacity = initialCapacity;
-		this.initialCapacity = initialCapacity;
-	}
+        this.capacity = initialCapacity;
+        this.initialCapacity = initialCapacity;
+    }
 
-	public void writeVertex(Vec3i offset,
-	                        float x, float y, float z, int color, float u, float v, int light, int chunk) {
-		if (this.count + 1 >= this.capacity) {
-			this.grow(this.stride);
-		}
+    public int push(ChunkVertexEncoder.Vertex[] vertices) {
+        var vertexStart = this.count;
+        var vertexCount = vertices.length;
 
-		this.encoder.write(MemoryUtil.memAddress(this.buffer, this.count * this.stride),
-				offset, x, y, z, color, u, v, light, chunk);
-		this.count++;
-	}
+        if (this.count + vertexCount >= this.capacity) {
+            this.grow(this.stride * vertexCount);
+        }
 
-	private void grow(int len) {
-		// The new capacity will at least as large as the write it needs to service
-		int cap = Math.max(this.capacity * 2, this.capacity + len);
+        long ptr = MemoryUtil.memAddress(this.buffer, this.count * this.stride);
 
-		// Update the buffer and capacity now
-		this.setBufferSize(cap * this.stride);
-	}
+        for (ChunkVertexEncoder.Vertex vertex : vertices) {
+            ptr = this.encoder.write(ptr, vertex, this.chunkId);
+        }
 
-	private void setBufferSize(int capacity) {
-		this.buffer = MemoryUtil.memRealloc(this.buffer, capacity * this.stride);
-		this.capacity = capacity;
-	}
+        this.count += vertexCount;
 
-	public int getVertexCount() {
-		return this.count;
-	}
+        return vertexStart;
+    }
 
-	public void start() {
-		this.count = 0;
+    private void grow(int len) {
+        // The new capacity will at least as large as the write it needs to service
+        int cap = Math.max(this.capacity * 2, this.capacity + len);
 
-		this.setBufferSize(this.initialCapacity);
-	}
+        // Update the buffer and capacity now
+        this.setBufferSize(cap * this.stride);
+    }
 
-	public void destroy() {
-		if (this.buffer != null) {
-			MemoryUtil.memFree(this.buffer);
-		}
+    private void setBufferSize(int capacity) {
+        this.buffer = MemoryUtil.memRealloc(this.buffer, capacity * this.stride);
+        this.capacity = capacity;
+    }
 
-		this.buffer = null;
-	}
+    public void start(int chunkId) {
+        this.count = 0;
+        this.chunkId = chunkId;
 
-	public NativeBuffer pop() {
-		if (this.count == 0) {
-			return null;
-		}
+        this.setBufferSize(this.initialCapacity);
+    }
 
-		return NativeBuffer.copy(MemoryUtil.memSlice(this.buffer, 0, this.stride * this.count));
-	}
+    public void destroy() {
+        if (this.buffer != null) {
+            MemoryUtil.memFree(this.buffer);
+        }
+
+        this.buffer = null;
+    }
+
+    public NativeBuffer pop() {
+        if (this.count == 0) {
+            return null;
+        }
+
+        return NativeBuffer.copy(MemoryUtil.memSlice(this.buffer, 0, this.stride * this.count));
+    }
 }

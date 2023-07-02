@@ -3,18 +3,27 @@ package me.jellysquid.mods.sodium.mixin.features.gui.fast_loading_screen;
 import com.mojang.blaze3d.systems.RenderSystem;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Reference2IntOpenHashMap;
+import me.jellysquid.mods.sodium.client.render.RenderGlobal;
 import me.jellysquid.mods.sodium.client.render.vertex.VertexBufferWriter;
 import me.jellysquid.mods.sodium.client.render.vertex.formats.ColorVertex;
 import me.jellysquid.mods.sodium.client.util.color.ColorABGR;
 import me.jellysquid.mods.sodium.client.util.color.ColorARGB;
 import net.minecraft.client.gui.WorldGenerationProgressTracker;
 import net.minecraft.client.gui.screen.LevelLoadingScreen;
-import net.minecraft.client.render.*;
+import net.minecraft.client.render.BufferBuilder;
+import net.minecraft.client.render.GameRenderer;
+import net.minecraft.client.render.Tessellator;
+import net.minecraft.client.render.VertexFormat;
+import net.minecraft.client.render.VertexFormats;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.math.Matrix4f;
 import net.minecraft.world.chunk.ChunkStatus;
 import org.lwjgl.system.MemoryStack;
-import org.spongepowered.asm.mixin.*;
+import org.spongepowered.asm.mixin.Final;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Mutable;
+import org.spongepowered.asm.mixin.Overwrite;
+import org.spongepowered.asm.mixin.Shadow;
 
 /**
  * Re-implements the loading screen with considerations to reduce draw calls and other sources of overhead. This can
@@ -22,15 +31,13 @@ import org.spongepowered.asm.mixin.*;
  */
 @Mixin(LevelLoadingScreen.class)
 public class MixinLevelLoadingScreen {
+    private static final int NULL_STATUS_COLOR = ColorABGR.pack(0, 0, 0, 0xFF);
+    private static final int DEFAULT_STATUS_COLOR = ColorARGB.pack(0, 0x11, 0xFF, 0xFF);
     @Mutable
     @Shadow
     @Final
     private static Object2IntMap<ChunkStatus> STATUS_TO_COLOR;
-
     private static Reference2IntOpenHashMap<ChunkStatus> STATUS_TO_COLOR_FAST;
-
-    private static final int NULL_STATUS_COLOR = ColorABGR.pack(0, 0, 0, 0xFF);
-    private static final int DEFAULT_STATUS_COLOR = ColorARGB.pack(0, 0x11, 0xFF, 0xFF);
 
     /**
      * This implementation differs from vanilla's in the following key ways.
@@ -59,7 +66,7 @@ public class MixinLevelLoadingScreen {
         RenderSystem.enableBlend();
         RenderSystem.disableTexture();
         RenderSystem.defaultBlendFunc();
-        
+
         BufferBuilder bufferBuilder = tessellator.getBuffer();
         bufferBuilder.begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_COLOR);
 
@@ -116,8 +123,8 @@ public class MixinLevelLoadingScreen {
     }
 
     private static void addRect(VertexBufferWriter writer, Matrix4f matrix, int x1, int y1, int x2, int y2, int color) {
-        try (MemoryStack stack = VertexBufferWriter.STACK.push()) {
-            long buffer = writer.buffer(stack, 4, ColorVertex.STRIDE, ColorVertex.FORMAT);
+        try (MemoryStack stack = RenderGlobal.VERTEX_DATA.push()) {
+            long buffer = stack.nmalloc(4 * ColorVertex.STRIDE);
             long ptr = buffer;
 
             ColorVertex.write(ptr, matrix, x1, y2, 0, color);
@@ -132,7 +139,7 @@ public class MixinLevelLoadingScreen {
             ColorVertex.write(ptr, matrix, x1, y1, 0, color);
             ptr += ColorVertex.STRIDE;
 
-            writer.push(buffer, 4, ColorVertex.STRIDE, ColorVertex.FORMAT);
+            writer.push(stack, buffer, 4, ColorVertex.FORMAT);
         }
     }
 }

@@ -11,16 +11,13 @@ public class BakedChunkModelBuilder implements ChunkModelBuilder {
     private final IndexBufferBuilder[] indexBuffers;
 
     private final ChunkRenderData.Builder renderData;
-    private final int id;
 
     public BakedChunkModelBuilder(ChunkVertexBufferBuilder vertexBuffer, IndexBufferBuilder[] indexBuffers,
-                                  ChunkRenderData.Builder renderData,
-                                  int chunkId) {
+                                  ChunkRenderData.Builder renderData) {
         this.indexBuffers = indexBuffers;
         this.vertexBuffer = vertexBuffer;
 
         this.renderData = renderData;
-        this.id = chunkId;
     }
 
     @Override
@@ -36,10 +33,5 @@ public class BakedChunkModelBuilder implements ChunkModelBuilder {
     @Override
     public void addSprite(Sprite sprite) {
         this.renderData.addSprite(sprite);
-    }
-
-    @Override
-    public int getChunkId() {
-        return this.id;
     }
 }

@@ -168,11 +168,11 @@ public class ImmersiveConnectionRenderer implements SynchronousResourceReloader 
         void write(
                 ChunkVertexBufferBuilder vertices, int offX, int offY, int offZ, int lightStart, int lightEnd, int chunkId
         ) {
-            vertices.writeVertex(
+            /*vertices.writeVertex(
                     new Vec3i(posX, posY, posZ),
                     offX + posX, offY + posY, offZ + posZ,
                     color, texU, texV, lightForStart ? lightStart : lightEnd, chunkId
-            );
+            );*/
         }
     }
 
@@ -180,7 +180,7 @@ public class ImmersiveConnectionRenderer implements SynchronousResourceReloader 
         void write(
                 ChunkModelBuilder out, int offX, int offY, int offZ, int lightStart, int lightEnd
         ) {
-            var vertexSink = out.getVertexBuffer();
+            /*var vertexSink = out.getVertexBuffer();
             int quadStart = vertexSink.getVertexCount();
             v0.write(vertexSink, offX, offY, offZ, lightStart, lightEnd, out.getChunkId());
             v1.write(vertexSink, offX, offY, offZ, lightStart, lightEnd, out.getChunkId());
@@ -188,7 +188,7 @@ public class ImmersiveConnectionRenderer implements SynchronousResourceReloader 
             v3.write(vertexSink, offX, offY, offZ, lightStart, lightEnd, out.getChunkId());
             var indexBuffer = out.getIndexBuffer(ModelQuadFacing.UNASSIGNED);
             indexBuffer.add(quadStart, ModelQuadWinding.CLOCKWISE);
-            indexBuffer.add(quadStart, ModelQuadWinding.COUNTERCLOCKWISE);
+            indexBuffer.add(quadStart, ModelQuadWinding.COUNTERCLOCKWISE);*/
         }
     }
 

@@ -2,6 +2,8 @@ package me.jellysquid.mods.sodium.mixin.core.pipeline.vertex;
 
 import me.jellysquid.mods.sodium.client.render.vertex.VertexBufferWriter;
 import me.jellysquid.mods.sodium.client.render.vertex.VertexFormatDescription;
+import me.jellysquid.mods.sodium.client.render.vertex.transform.VertexTransform;
+import me.jellysquid.mods.sodium.client.util.color.ColorABGR;
 import net.minecraft.client.render.FixedColorVertexConsumer;
 import net.minecraft.client.render.VertexConsumer;
 import net.minecraft.client.render.VertexFormats;
@@ -18,30 +20,11 @@ public abstract class MixinOutlineVertexConsumer extends FixedColorVertexConsume
     private VertexConsumer delegate;
 
     @Override
-    public void push(long ptr, int count, int stride, VertexFormatDescription format) {
-        this.writeVerticesSlow(ptr, count, stride, format);
-    }
+    public void push(MemoryStack stack, long ptr, int count, VertexFormatDescription format) {
+        VertexTransform.transformColor(ptr, count, format,
+                ColorABGR.pack(this.fixedRed, this.fixedGreen, this.fixedBlue, this.fixedAlpha));
 
-    @Override
-    public long buffer(MemoryStack stack, int count, int stride, VertexFormatDescription format) {
-        return VertexBufferWriter.of(this.delegate).buffer(stack, count, stride, format);
-    }
-
-    private void writeVerticesSlow(long ptr, int count, int stride, VertexFormatDescription format) {
-        var offsetPosition = format.getOffset(VertexFormats.POSITION_ELEMENT);
-        var offsetTexture = format.getOffset(VertexFormats.TEXTURE_ELEMENT);
-
-        for (int vertexIndex = 0; vertexIndex < count; vertexIndex++) {
-            float positionX = MemoryUtil.memGetFloat(ptr + offsetPosition + 0);
-            float positionY = MemoryUtil.memGetFloat(ptr + offsetPosition + 4);
-            float positionZ = MemoryUtil.memGetFloat(ptr + offsetPosition + 8);
-
-            float textureU = MemoryUtil.memGetFloat(ptr + offsetTexture + 0);
-            float textureV = MemoryUtil.memGetFloat(ptr + offsetTexture + 4);
-
-            this.delegate.vertex(positionX, positionY, positionZ).color(this.fixedRed, this.fixedGreen, this.fixedBlue, this.fixedAlpha).texture(textureU, textureV).next();
-
-            ptr += stride;
-        }
+        VertexBufferWriter.of(this.delegate)
+                .push(stack, ptr, count, format);
     }
 }

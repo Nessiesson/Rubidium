@@ -1,5 +1,6 @@
 package me.jellysquid.mods.sodium.mixin.features.gui.font;
 
+import me.jellysquid.mods.sodium.client.render.RenderGlobal;
 import me.jellysquid.mods.sodium.client.render.vertex.VertexBufferWriter;
 import me.jellysquid.mods.sodium.client.render.vertex.formats.GlyphVertex;
 import me.jellysquid.mods.sodium.client.util.color.ColorABGR;
@@ -48,6 +49,16 @@ public class MixinGlyphRenderer {
     @Final
     private float maxU;
 
+    private static void write(long buffer,
+                              Matrix4f matrix, float x, float y, float z, int color, float u, float v, int light) {
+        Matrix4fExtended ext = MatrixUtil.getExtendedMatrix(matrix);
+        float x2 = ext.transformVecX(x, y, z);
+        float y2 = ext.transformVecY(x, y, z);
+        float z2 = ext.transformVecZ(x, y, z);
+
+        GlyphVertex.write(buffer, x2, y2, z2, color, u, v, light);
+    }
+
     /**
      * @reason Use intrinsics
      * @author JellySquid
@@ -67,8 +78,8 @@ public class MixinGlyphRenderer {
 
         var writer = VertexBufferWriter.of(vertexConsumer);
 
-        try (MemoryStack stack = VertexBufferWriter.STACK.push()) {
-            long buffer = writer.buffer(stack, 4, GlyphVertex.STRIDE, GlyphVertex.FORMAT);
+        try (MemoryStack stack = RenderGlobal.VERTEX_DATA.push()) {
+            long buffer = stack.nmalloc(4 * GlyphVertex.STRIDE);
             long ptr = buffer;
 
             write(ptr, matrix, x1 + w1, h1, 0.0F, color, this.minU, this.minV, light);
@@ -83,17 +94,7 @@ public class MixinGlyphRenderer {
             write(ptr, matrix, x2 + w1, h1, 0.0F, color, this.maxU, this.minV, light);
             ptr += GlyphVertex.STRIDE;
 
-            writer.push(buffer, 4, GlyphVertex.STRIDE, GlyphVertex.FORMAT);
+            writer.push(stack, buffer, 4, GlyphVertex.FORMAT);
         }
-    }
-
-    private static void write(long buffer,
-                              Matrix4f matrix, float x, float y, float z, int color, float u, float v, int light) {
-        Matrix4fExtended ext = MatrixUtil.getExtendedMatrix(matrix);
-        float x2 = ext.transformVecX(x, y, z);
-        float y2 = ext.transformVecY(x, y, z);
-        float z2 = ext.transformVecZ(x, y, z);
-
-        GlyphVertex.write(buffer, x2, y2, z2, color, u, v, light);
     }
 }

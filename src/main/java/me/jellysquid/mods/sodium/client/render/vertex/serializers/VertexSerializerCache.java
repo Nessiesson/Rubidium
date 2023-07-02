@@ -5,6 +5,7 @@ import it.unimi.dsi.fastutil.longs.Long2ReferenceOpenHashMap;
 import me.jellysquid.mods.sodium.client.render.vertex.VertexFormatDescription;
 import me.jellysquid.mods.sodium.client.render.vertex.serializers.generated.VertexSerializerFactory;
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,7 +21,6 @@ public class VertexSerializerCache {
     private static final Logger LOGGER = LoggerFactory.getLogger(VertexSerializerCache.class);
 
     private static final Path CLASS_DUMP_PATH;
-    private static final Long2ReferenceMap<VertexSerializer> CACHE = new Long2ReferenceOpenHashMap<>();
 
     static {
         var classDumpPath = System.getProperty("sodium.codegen.dump", null);
@@ -31,6 +31,8 @@ public class VertexSerializerCache {
             CLASS_DUMP_PATH = null;
         }
     }
+
+    private static final Long2ReferenceMap<VertexSerializer> CACHE = new Long2ReferenceOpenHashMap<>();
 
     public static VertexSerializer get(VertexFormatDescription srcFormat, VertexFormatDescription dstFormat) {
         var identifier = getSerializerKey(srcFormat, dstFormat);
@@ -51,7 +53,7 @@ public class VertexSerializerCache {
         var identifier = String.format("%04X$%04X", srcVertexFormat.id, dstVertexFormat.id);
         var desc = createMemoryTransferList(srcVertexFormat, dstVertexFormat);
 
-        var bytecode = VertexSerializerFactory.generate(desc, identifier);
+        var bytecode = VertexSerializerFactory.generate(desc, srcVertexFormat, dstVertexFormat, identifier);
 
         if (CLASS_DUMP_PATH != null) {
             dumpClass(identifier, bytecode);
@@ -86,29 +88,28 @@ public class VertexSerializerCache {
     }
 
     private static List<MemoryTransfer> createMemoryTransferList(VertexFormatDescription srcVertexFormat, VertexFormatDescription dstVertexFormat) {
-        if (srcVertexFormat.elements.length < dstVertexFormat.elements.length) {
+        if (srcVertexFormat.elementCount < dstVertexFormat.elementCount) {
             throw new IllegalArgumentException("Source format has fewer elements than destination format");
         }
 
         var ops = new ArrayList<MemoryTransfer>();
 
-        var srcElements = srcVertexFormat.elements;
-        var srcOffsets = srcVertexFormat.offsets;
+        var srcElements = srcVertexFormat.getElements();
+        var srcOffsets = srcVertexFormat.getOffsets();
 
-        var dstElements = dstVertexFormat.elements;
-        var dstOffsets = dstVertexFormat.offsets;
+        var dstElements = dstVertexFormat.getElements();
+        var dstOffsets = dstVertexFormat.getOffsets();
 
-        for (int dstIndex = 0; dstIndex < dstElements.length; dstIndex++) {
-            var dstElement = dstElements[dstIndex];
+        for (int dstIndex = 0; dstIndex < dstElements.size(); dstIndex++) {
+            var dstElement = dstElements.get(dstIndex);
+            var srcIndex = srcElements.indexOf(dstElement);
 
-            var srcIndex = ArrayUtils.indexOf(srcElements, dstElement);
-
-            if (srcIndex == ArrayUtils.INDEX_NOT_FOUND) {
+            if (srcIndex == -1) {
                 throw new RuntimeException("Source vertex format does not contain element: " + dstElement);
             }
 
-            var srcOffset = srcOffsets[srcIndex];
-            var dstOffset = dstOffsets[dstIndex];
+            var srcOffset = srcOffsets.getInt(srcIndex);
+            var dstOffset = dstOffsets.getInt(dstIndex);
 
             ops.add(new MemoryTransfer(srcOffset, dstOffset, dstElement.getByteLength()));
         }

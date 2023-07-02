@@ -1,5 +1,6 @@
 package me.jellysquid.mods.sodium.mixin.features.buffer_builder.intrinsics;
 
+import me.jellysquid.mods.sodium.client.render.RenderGlobal;
 import me.jellysquid.mods.sodium.client.render.vertex.VertexBufferWriter;
 import me.jellysquid.mods.sodium.client.render.vertex.formats.LineVertex;
 import me.jellysquid.mods.sodium.client.util.Norm3b;
@@ -44,31 +45,31 @@ public class MixinWorldRenderer {
         float v1x = positionExt.transformVecX(x1f, y1f, z1f);
         float v1y = positionExt.transformVecY(x1f, y1f, z1f);
         float v1z = positionExt.transformVecZ(x1f, y1f, z1f);
-        
+
         float v2x = positionExt.transformVecX(x2f, y1f, z1f);
         float v2y = positionExt.transformVecY(x2f, y1f, z1f);
         float v2z = positionExt.transformVecZ(x2f, y1f, z1f);
-        
+
         float v3x = positionExt.transformVecX(x1f, y2f, z1f);
         float v3y = positionExt.transformVecY(x1f, y2f, z1f);
         float v3z = positionExt.transformVecZ(x1f, y2f, z1f);
-        
+
         float v4x = positionExt.transformVecX(x1f, y1f, z2f);
         float v4y = positionExt.transformVecY(x1f, y1f, z2f);
         float v4z = positionExt.transformVecZ(x1f, y1f, z2f);
-        
+
         float v5x = positionExt.transformVecX(x2f, y2f, z1f);
         float v5y = positionExt.transformVecY(x2f, y2f, z1f);
         float v5z = positionExt.transformVecZ(x2f, y2f, z1f);
-        
+
         float v6x = positionExt.transformVecX(x1f, y2f, z2f);
         float v6y = positionExt.transformVecY(x1f, y2f, z2f);
         float v6z = positionExt.transformVecZ(x1f, y2f, z2f);
-        
+
         float v7x = positionExt.transformVecX(x2f, y1f, z2f);
         float v7y = positionExt.transformVecY(x2f, y1f, z2f);
         float v7z = positionExt.transformVecZ(x2f, y1f, z2f);
-        
+
         float v8x = positionExt.transformVecX(x2f, y2f, z2f);
         float v8y = positionExt.transformVecY(x2f, y2f, z2f);
         float v8z = positionExt.transformVecZ(x2f, y2f, z2f);
@@ -102,8 +103,8 @@ public class MixinWorldRenderer {
     }
 
     private static void writeLineVertices(VertexBufferWriter writer, float x, float y, float z, int color, int normal) {
-        try (MemoryStack stack = VertexBufferWriter.STACK.push()) {
-            long buffer = writer.buffer(stack, 2, LineVertex.STRIDE, LineVertex.FORMAT);
+        try (MemoryStack stack = RenderGlobal.VERTEX_DATA.push()) {
+            long buffer = stack.nmalloc(2 * LineVertex.STRIDE);
             long ptr = buffer;
 
             for (int i = 0; i < 2; i++) {
@@ -111,7 +112,7 @@ public class MixinWorldRenderer {
                 ptr += LineVertex.STRIDE;
             }
 
-            writer.push(buffer, 2, LineVertex.STRIDE, LineVertex.FORMAT);
+            writer.push(stack, buffer, 2, LineVertex.FORMAT);
         }
     }
 }

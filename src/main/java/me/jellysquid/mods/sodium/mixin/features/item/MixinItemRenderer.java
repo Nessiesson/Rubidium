@@ -16,6 +16,8 @@ import net.minecraft.client.render.model.BakedQuad;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.math.Direction;
+import net.minecraft.util.math.random.LocalRandom;
+import net.minecraft.util.math.random.Random;
 import net.minecraft.util.math.random.Xoroshiro128PlusPlusRandom;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -26,7 +28,7 @@ import java.util.List;
 
 @Mixin(ItemRenderer.class)
 public class MixinItemRenderer {
-    private final Xoroshiro128PlusPlusRandom random = new Xoroshiro128PlusPlusRandom(42L);
+    private final Random random = new LocalRandom(42L);
 
     @Shadow
     @Final
@@ -40,7 +42,7 @@ public class MixinItemRenderer {
     public void renderBakedItemModel(BakedModel model, ItemStack itemStack, int light, int overlay, MatrixStack matricStack, VertexConsumer vertexConsumer) {
         var writer = VertexBufferWriter.of(vertexConsumer);
 
-        Xoroshiro128PlusPlusRandom random = this.random;
+        Random random = this.random;
         MatrixStack.Entry matrices = matricStack.peek();
 
         ItemColorProvider colorProvider = null;

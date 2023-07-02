@@ -1,5 +1,6 @@
 package me.jellysquid.mods.sodium.mixin.core;
 
+import me.jellysquid.mods.sodium.mixin.core.pipeline.vertex.MixinOverlayVertexConsumer;
 import net.minecraft.client.render.OverlayVertexConsumer;
 import net.minecraft.client.render.model.BakedQuadFactory;
 import net.minecraft.client.render.model.json.JsonUnbakedModel;
@@ -11,6 +12,11 @@ import org.spongepowered.asm.mixin.Overwrite;
 @Mixin(Direction.class)
 public class MixinDirection {
     /**
+     * Benchmarking looking at a ton of glinted/lodestone compasses: time spent in {@link MixinOverlayVertexConsumer#writeVerticesSlow}
+     * <ul>
+     *     <li>Before optimization: 10.4% (n=2979)</li>
+     *     <li>After optimization: 1.5% (n=2409)</li>
+     * </ul>
      * Used by:
      * <ul>
      *     <li>{@link OverlayVertexConsumer}</li>
@@ -21,6 +27,7 @@ public class MixinDirection {
      * @author <a href="mailto:skaggsm333@gmail.com">Mitchell Skaggs</a>
      * @reason Avoid looping over all directions and computing the dot product
      */
+    @SuppressWarnings({ "StatementWithEmptyBody", "JavadocReference" })
     @Overwrite
     public static Direction getFacing(float x, float y, float z) {
         // First choice in ties: negative, positive; Y, Z, X
